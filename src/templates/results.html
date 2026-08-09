@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Результаты диеты</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Ваша оптимальная диета на сегодня</h1>
+
+        <div class="official-notice">
+            <h3>Официальное уведомление</h3>
+            <p>Данный сервис является экспериментальной разработкой Научно-исследовательского центра 
+            пищевых технологий. Все результаты носят рекомендательный характер и требуют 
+            обязательной проверки у специалиста по питанию.</p>
+        </div>
+        
+        <div class="results-section">
+            <h2>Продукты: <span id="shown-count">0</span> из <span id="total-count">0</span></h2>
+            <ul id="products-list">
+            </ul>
+            <button id="load-more" class="submit-btn">Показать еще</button>
+        </div>
+
+        <div class="results-section">
+          <p>Общая стоимость: <b>{{ "%.2f"|format(diet.total_cost) }}</b> ₽</p>
+            <p>Коэффициент нутриентов: {{ "%.5f"|format(diet.nutrient_factor) }}</p>
+
+            <div class="results-section graphs-row">
+            {% if diet.plot_cash %}
+              <div class="graph-wrapper">
+                  <img src="data:image/png;base64,{{ diet.plot_cash }}" 
+                       alt="График стоимости" 
+                       class="graph-img">
+              </div>
+            {% endif %}
+
+            {% if diet.plot_gramms %}
+              <div class="graph-wrapper">
+                <img src="data:image/png;base64,{{ diet.plot_gramms }}" 
+                     alt="График веса продуктов" 
+                     class="graph-img">
+              </div>
+            {% endif %}
+            </div>
+        </div>
+
+        <div class="results-section">
+            <h2>Нутриентный состав диеты</h2>
+            <div class="nutrients-table-container">
+                <table class="nutrients-table">
+                    <tbody>
+                        <tr><th>Пол</th><td>{{ diet.nutrients[0] }}</td></tr>
+                        <tr><th>Ккал</th><td>{{ "%.1f"|format(diet.nutrients[1]) }}</td></tr>
+                        <tr><th>Белки</th><td>{{ "%.1f"|format(diet.nutrients[2]) }}</td></tr>
+                        <tr><th>Жиры</th><td>{{ "%.1f"|format(diet.nutrients[3]) }}</td></tr>
+                        <tr><th>Углеводы</th><td>{{ "%.1f"|format(diet.nutrients[4]) }}</td></tr>
+                        <tr><th>Витамин B1</th><td>{{ "%.3f"|format(diet.nutrients[5]) }}</td></tr>
+                        <tr><th>Витамин B2</th><td>{{ "%.3f"|format(diet.nutrients[6]) }}</td></tr>
+                        <tr><th>Витамин B3</th><td>{{ "%.3f"|format(diet.nutrients[7]) }}</td></tr>
+                        <tr><th>Витамин B6</th><td>{{ "%.3f"|format(diet.nutrients[8]) }}</td></tr>
+                        <tr><th>Витамин B7</th><td>{{ "%.4f"|format(diet.nutrients[9]) }}</td></tr>
+                        <tr><th>Витамин B12</th><td>{{ "%.3f"|format(diet.nutrients[10]) }}</td></tr>
+                        <tr><th>Витамин A</th><td>{{ "%.3f"|format(diet.nutrients[11]) }}</td></tr>
+                        <tr><th>Витамин C</th><td>{{ "%.1f"|format(diet.nutrients[12]) }}</td></tr>
+                        <tr><th>Витамин D</th><td>{{ "%.1f"|format(diet.nutrients[13]) }}</td></tr>
+                        <tr><th>Витамин E</th><td>{{ "%.2f"|format(diet.nutrients[14]) }}</td></tr>
+                        <tr><th>Витамин K</th><td>{{ "%.4f"|format(diet.nutrients[15]) }}</td></tr>
+                        <tr><th>Кальций</th><td>{{ "%.1f"|format(diet.nutrients[16]) }}</td></tr>
+                        <tr><th>Фосфор</th><td>{{ "%.1f"|format(diet.nutrients[17]) }}</td></tr>
+                        <tr><th>Магний</th><td>{{ "%.1f"|format(diet.nutrients[18]) }}</td></tr>
+                        <tr><th>Железо</th><td>{{ "%.1f"|format(diet.nutrients[19]) }}</td></tr>
+                        <tr><th>Йод</th><td>{{ "%.3f"|format(diet.nutrients[20]) }}</td></tr>
+                        <tr><th>Калий</th><td>{{ "%.1f"|format(diet.nutrients[21]) }}</td></tr>
+                        <tr><th>Натрий</th><td>{{ "%.1f"|format(diet.nutrients[22]) }}</td></tr>
+                        <tr><th>Цинк</th><td>{{ "%.1f"|format(diet.nutrients[23]) }}</td></tr>
+                        <tr><th>Селен</th><td>{{ "%.4f"|format(diet.nutrients[24]) }}</td></tr>
+                        <tr><th>Медь</th><td>{{ "%.2f"|format(diet.nutrients[25]) }}</td></tr>
+                        <tr><th>Марганец</th><td>{{ "%.2f"|format(diet.nutrients[26]) }}</td></tr>
+                        <tr><th>Хром</th><td>{{ "%.4f"|format(diet.nutrients[27]) }}</td></tr>
+                        <tr><th>Фтор</th><td>{{ "%.4f"|format(diet.nutrients[28]) }}</td></tr>
+                        <tr><th>Омега-3</th><td>{{ "%.1f"|format(diet.nutrients[29]) }}</td></tr>
+                        <tr><th>Омега-6</th><td>{{ "%.1f"|format(diet.nutrients[30]) }}</td></tr>
+                        <tr><th>Пробиотики</th><td>{{ "%.1f"|format(diet.nutrients[31]) }}</td></tr>
+                        <tr><th>Клетчатка</th><td>{{ "%.1f"|format(diet.nutrients[32]) }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+
+        <a href="/" class="back-btn">На главную</a>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const products = {
+                {% for product, grams in diet.products.items() %}
+                    '{{ product }}': {{ "%.2f"|format(grams) }},
+                {% endfor %}
+            };
+
+            if (Object.keys(products).length === 0) {
+                const li = document.createElement('li');
+                li.textContent = 'Нет рекомендованных продуктов';
+                productsList.appendChild(li);
+                loadMoreBtn.style.display = 'none';
+                return;
+            }
+
+            
+            const productsList = document.getElementById('products-list');
+            const loadMoreBtn = document.getElementById('load-more');
+            const shownCount = document.getElementById('shown-count');
+            const totalCount = document.getElementById('total-count');
+            
+            const itemsPerPage = 5;
+            let currentPage = 0;
+            const productEntries = Object.entries(products);
+            
+            // Проверяем, есть ли продукты
+            if (productEntries.length === 0) {
+                const li = document.createElement('li');
+                li.textContent = 'Нет рекомендованных продуктов';
+                productsList.appendChild(li);
+                loadMoreBtn.style.display = 'none';
+                return;
+            }
+            
+            totalCount.textContent = productEntries.length;
+            
+            function displayProducts() {
+                const start = currentPage * itemsPerPage;
+                const end = start + itemsPerPage;
+                const productsToShow = productEntries.slice(start, end);
+                
+                productsToShow.forEach(([product, grams]) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `${product}: <b>${grams.toFixed(2)}</b> г`;
+                    productsList.appendChild(li);
+                });
+                
+                shownCount.textContent = Math.min(end, productEntries.length);
+                
+                if (end >= productEntries.length) {
+                    loadMoreBtn.style.display = 'none';
+                } else {
+                    loadMoreBtn.style.display = 'block';
+                }
+            }
+            
+            loadMoreBtn.addEventListener('click', function() {
+                currentPage++;
+                displayProducts();
+            });
+            
+            // Первоначальная загрузка
+            displayProducts();
+        });
+    </script>
+</body>
+</html>
+

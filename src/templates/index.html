@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>От корзины до диеты</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <span class="logo-part-1">От корзины</span>
+                <span class="logo-part-2">до диеты</span>
+                <div class="logo-line"></div>
+            </div>
+            <div class="disclaimer">
+                <p>Исследовательский проект</p>
+                <p>Использование на ваш страх и риск</p>
+            </div>
+        </div>
+
+        <form id="userForm" class="form" method="post" action="/submit">
+            <div class="form-group">
+                <label for="age">Возраст:</label>
+                <input type="number" id="age" name="age" min="18" max="50" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="height">Рост (см):</label>
+                <input type="number" id="height" name="height" min="150" max="220" required>
+            </div>
+
+            <div class="form-group">
+                <label for="weight">Вес (кг):</label>
+                <input type="number" id="weight" name="weight" min="40" max="200" required>
+            </div>
+
+            <div class="form-group">
+                <label>Пол:</label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="gender" value="М" required> Мужской
+                    </label>
+                    <label>
+                        <input type="radio" name="gender" value="Ж"> Женский
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="country">Страна проживания:</label>
+                <select id="country" name="country" required>
+                    {% for country in countries %}
+                    <option value="{{ country }}" {% if country == "Россия" %}selected{% endif %}>{{ country }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="lifestyle">Образ жизни:</label>
+                <select id="lifestyle" name="lifestyle" required>
+                    <option value="неактивный">Неактивный</option>
+                    <option value="активный">Активный</option>
+                    <option value="спортивный">Спортивный</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Вредные привычки:</label>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" name="alcohol" id="alcohol">
+                        Частое употребление алкоголя
+                    </label>
+                    <label>
+                        <input type="checkbox" name="tobacco" id="tobacco">
+                        Употребление табачных изделий
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Аллергены или нежелательные продукты:</label>
+                <div class="allergen-wrapper">
+                    <div class="selected-allergens" id="selectedAllergens"></div>
+                    <input type="text" 
+                           id="allergenInput" 
+                           placeholder="Начните вводить название продукта"
+                           autocomplete="off"
+                           class="form-input">
+                    <div class="autocomplete-items" id="autocompleteList"></div>
+                </div>
+                <input type="hidden" name="allergens" id="hiddenAllergens">
+            </div>
+
+            <div class="form-group">
+                <label for="budget">Ограничение бюджета:</label>
+                <div class="budget-input-wrapper">
+                    <input type="number" 
+                           id="budget" 
+                           name="budget" 
+                           min="0" 
+                           class="form-input budget-input"
+                           placeholder="Укажите сумму"
+                           >
+                    <span class="currency-symbol">₽</span>
+                    <span class="info-icon" 
+                          data-tooltip="Если вы ограничены в бюджете, то всегда можете указать сумму денег, которую готовы тратить на еду!">?</span>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Рассчитать диету</button>
+
+            <div class="loading-notice" id="loadingOverlay" style="display: none; margin-top: 20px; background: #e9ecef; border-radius: 8px; padding: 20px; text-align: center;">
+                <div style="font-size: 1.2rem; font-weight: 500; color: #2c3e50; margin-bottom: 8px;">Идет расчет оптимальной диеты</div>
+                <div style="font-size: 0.9rem; color: #666;">Это может занять несколько минут. Пожалуйста, подождите.</div>
+            </div>
+
+        </form>
+    </div>
+
+    <script src="/static/js/validation.js"></script>
+    <script>
+        const allergens = {{ allergens|tojson }};
+        
+        const selectedAllergens = new Set();
+        
+        document.getElementById('allergenInput').addEventListener('input', function(e) {
+            const input = e.target.value.toLowerCase();
+            const list = document.getElementById('autocompleteList');
+            list.innerHTML = '';
+            
+            if (!input) return;
+            
+            const filtered = allergens.filter(item => 
+                item.toLowerCase().startsWith(input)
+            );
+            
+            filtered.forEach(item => {
+                const div = document.createElement('div');
+                div.textContent = item;
+                div.className = 'autocomplete-item';
+                div.onclick = () => selectAllergen(item);
+                list.appendChild(div);
+            });
+        });
+
+        function selectAllergen(item) {
+            if (selectedAllergens.has(item)) return;
+            
+            selectedAllergens.add(item);
+            updateSelectedDisplay();
+            document.getElementById('allergenInput').value = '';
+            document.getElementById('autocompleteList').innerHTML = '';
+        }
+
+        function updateSelectedDisplay() {
+            const container = document.getElementById('selectedAllergens');
+            container.innerHTML = '';
+            
+            selectedAllergens.forEach(item => {
+                const tag = document.createElement('div');
+                tag.className = 'allergen-tag';
+                tag.innerHTML = `
+                    ${item}
+                    <span class="remove-tag" onclick="removeAllergen('${item}')">×</span>
+                `;
+                container.appendChild(tag);
+            });
+            
+            document.getElementById('hiddenAllergens').value = 
+                Array.from(selectedAllergens).join(',');
+        }
+
+        function removeAllergen(item) {
+            selectedAllergens.delete(item);
+            updateSelectedDisplay();
+        }
+    </script>
+<script>
+document.getElementById('userForm').addEventListener('submit', function(e) {
+    if (this.checkValidity()) {
+        const loadingNotice = document.getElementById('loadingOverlay');
+        loadingNotice.style.display = 'block';
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Идет расчет...';
+    }
+});
+
+window.addEventListener('pageshow', function(event) {
+    const loadingNotice = document.getElementById('loadingOverlay');
+    if (loadingNotice) {
+        loadingNotice.style.display = 'none';
+    }
+    
+    const submitBtn = document.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Рассчитать диету';
+    }
+});
+</script>
+</body>
+</html>
